@@ -6,3 +6,11 @@ services:
       - "5000:5000"
   redis:
     image: "redis:alpine"
+  robot:
+    image: ppodgorsek/robot-framework:3.2.2
+    depends_on:
+      - "webapp"
+      - "redis"
+    volumes:
+      - ./robot/reports:/opt/robotframework/reports:Z
+      - ./robot/tests:/opt/robotframework/tests:Z

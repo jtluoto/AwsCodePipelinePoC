@@ -6,4 +6,4 @@ phases:
       python: 3.7
   build:
     commands:
-      - docker-compose up -d
+      - docker-compose up --abort-on-container-exit --exit-code-from robot
