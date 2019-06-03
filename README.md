@@ -1,1 +1,3 @@
-README
+Foo bar
+-------
+*README*
