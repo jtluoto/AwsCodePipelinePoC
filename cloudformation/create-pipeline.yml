@@ -1,0 +1,72 @@
+# aws codepipeline create-pipeline --cli-input-json file://create-pipeline.json
+Parameters:
+  BranchName:
+    Description: GitHub branch name
+    Type: String
+    Default: master
+  RepositoryName:
+    Description: GitHub repository name
+    Type: String
+    Default: test
+  GitHubOwner:
+    Type: String
+  GitHubSecret:
+    Type: String
+    NoEcho: true
+  GitHubOAuthToken:
+    Type: String
+    NoEcho: true
+Resources:
+  AppPipelineWebhook:
+    Type: 'AWS::CodePipeline::Webhook'
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Ref GitHubSecret
+      Filters:
+        - JsonPath: $.ref
+          MatchEquals: 'refs/heads/{Branch}'
+      TargetPipeline: !Ref WebAppPipeline
+      TargetAction: SourceAction
+      Name: WebAppPipelineWebhook
+      TargetPipelineVersion: !GetAtt 
+        - WebAppPipeline
+        - Version
+      RegisterWithThirdParty: true
+  WebAppPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: WebAppPipeline
+      RoleArn: !GetAtt
+        - CodePipelineServiceRole
+        - Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref RepositoryName
+                Branch: !Ref BranchName
+                OAuthToken: !Ref GitHubOAuthToken
+                PollForSourceChanges: false
+              RunOrder: 1
+  CodePipelineServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action: 'sts:AssumeRole'    
+  
